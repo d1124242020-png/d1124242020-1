@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>徐少勇BMI計算網站</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Noto Sans TC', sans-serif;
+        }
+
+        /* Gauge Needle Animation */
+        .gauge-needle {
+            transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform-origin: bottom center;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-between selection:bg-teal-500 selection:text-white">
+
+    <!-- Header / Navbar -->
+    <header class="w-full bg-white/90 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50 px-4 sm:px-8 py-3.5 shadow-sm">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
+            
+            <!-- Title Left (Large Bold Font) -->
+            <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
+                <div class="flex items-center gap-2.5">
+                    <div class="bg-gradient-to-tr from-teal-500 to-emerald-400 text-white p-2.5 rounded-2xl shadow-md shadow-teal-500/20">
+                        <i class="fa-solid fa-heart-pulse text-2xl"></i>
+                    </div>
+                    <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                        徐少勇BMI計算網站
+                    </h1>
+                </div>
+            </div>
+
+            <!-- Score & Stats Summary Right -->
+            <div class="flex items-center gap-2 sm:gap-4 w-full sm:w-auto justify-end">
+                <!-- Total Tests Count -->
+                <div class="bg-slate-100 border border-slate-200/80 px-3 py-1.5 rounded-xl flex items-center gap-2">
+                    <i class="fa-solid fa-calculator text-teal-600 text-sm sm:text-base"></i>
+                    <div class="flex flex-col sm:flex-row sm:gap-1 items-baseline">
+                        <span class="text-xs text-slate-500">檢測次數:</span>
+                        <span id="header-total-count" class="text-sm sm:text-base font-bold text-slate-800">0</span>
+                    </div>
+                </div>
+
+                <!-- Latest BMI & Badge -->
+                <div class="bg-slate-100 border border-slate-200/80 px-3 py-1.5 rounded-xl flex items-center gap-2">
+                    <i class="fa-solid fa-weight-scale text-emerald-600 text-sm sm:text-base"></i>
+                    <div class="flex flex-col sm:flex-row sm:gap-1 items-baseline">
+                        <span class="text-xs text-slate-500">最新BMI:</span>
+                        <span id="header-latest-bmi" class="text-sm sm:text-base font-black text-slate-800">--</span>
+                    </div>
+                    <span id="header-status-badge" class="hidden text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-600">
+                        未檢測
+                    </span>
+                </div>
+            </div>
+
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto w-full px-4 sm:px-8 py-8 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Left / Upper Column: Input Form (5 Cols) -->
+        <section class="lg:col-span-5 flex flex-col gap-6">
+            <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm relative overflow-hidden">
+                <div class="flex items-center gap-2 mb-6">
+                    <i class="fa-solid fa-sliders text-teal-600 text-xl"></i>
+                    <h2 class="text-xl font-bold text-slate-900">健康參數輸入</h2>
+                </div>
+
+                <form id="bmi-form" onsubmit="return false;" class="space-y-5">
+                    <!-- Gender Selection -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">性別</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="cursor-pointer">
+                                <input type="radio" name="gender" value="male" checked class="peer sr-only">
+                                <div class="p-3 text-center rounded-2xl border-2 border-slate-200 peer-checked:border-teal-500 peer-checked:bg-teal-50/50 peer-checked:text-teal-700 font-bold transition flex items-center justify-center gap-2 text-slate-600">
+                                    <i class="fa-solid fa-mars text-lg"></i> 男性
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="gender" value="female" class="peer sr-only">
+                                <div class="p-3 text-center rounded-2xl border-2 border-slate-200 peer-checked:border-teal-500 peer-checked:bg-teal-50/50 peer-checked:text-teal-700 font-bold transition flex items-center justify-center gap-2 text-slate-600">
+                                    <i class="fa-solid fa-venus text-lg"></i> 女性
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Age & Activity Level Grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label for="age" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">年齡 (歲)</label>
+                            <input type="number" id="age" min="1" max="120" value="25" required
+                                class="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 focus:border-teal-500 focus:outline-none font-bold text-slate-800 transition">
+                        </div>
+                        <div>
+                            <label for="activity" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">日常活動量</label>
+                            <select id="activity" class="w-full px-3 py-3 rounded-2xl border-2 border-slate-200 focus:border-teal-500 focus:outline-none font-bold text-slate-800 transition bg-white text-sm">
+                                <option value="1.2">久坐 / 幾乎不運動</option>
+                                <option value="1.375" selected>輕度運動 (週1-3天)</option>
+                                <option value="1.55">中度運動 (週3-5天)</option>
+                                <option value="1.725">高強度運動 (週6-7天)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Height Input -->
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <label for="height" class="block text-xs font-bold text-slate-500 uppercase tracking-wider">身高 (cm)</label>
+                            <span id="height-val" class="text-xs font-bold text-teal-600">170 cm</span>
+                        </div>
+                        <input type="number" id="height" min="50" max="250" value="170" step="0.5" required
+                            class="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 focus:border-teal-500 focus:outline-none font-bold text-slate-800 transition mb-2">
+                    </div>
+
+                    <!-- Weight Input -->
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <label for="weight" class="block text-xs font-bold text-slate-500 uppercase tracking-wider">體重 (kg)</label>
+                            <span id="weight-val" class="text-xs font-bold text-teal-600">65 kg</span>
+                        </div>
+                        <input type="number" id="weight" min="10" max="300" value="65" step="0.1" required
+                            class="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 focus:border-teal-500 focus:outline-none font-bold text-slate-800 transition mb-2">
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" id="btn-calculate" 
+                        class="w-full bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-teal-500/25 active:scale-[0.98] transition duration-150 flex items-center justify-center gap-2 text-base">
+                        <i class="fa-solid fa-calculator"></i>
+                        <span>計算 BMI 與健康建議</span>
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Right / Lower Column: BMI Gauge & Results (7 Cols) -->
+        <section class="lg:col-span-7 flex flex-col gap-6">
+            
+            <!-- Result Card -->
+            <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm flex flex-col items-center relative overflow-hidden">
+                <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">BMI 計算結果</h2>
+
+                <!-- Big Numeric BMI -->
+                <div class="flex items-baseline gap-2 mb-1">
+                    <span id="res-bmi" class="text-5xl sm:text-6xl font-black text-slate-800 tracking-tight">22.5</span>
+                    <span class="text-sm font-bold text-slate-400">kg/m²</span>
+                </div>
+
+                <!-- Status Pill Tag -->
+                <div id="res-status-tag" class="px-4 py-1.5 rounded-full font-bold text-sm bg-emerald-100 text-emerald-700 mb-6 transition-all duration-300">
+                    理想體重 (18.5 - 23.9)
+                </div>
+
+                <!-- Visual Arc Gauge Meter -->
+                <div class="relative w-full max-w-[280px] h-[140px] flex justify-center items-end overflow-hidden mb-4">
+                    <!-- Semi-circle Track -->
+                    <svg class="w-full h-full" viewBox="0 0 200 110">
+                        <defs>
+                            <linearGradient id="gauge-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#38bdf8" />    <!-- Overweight / Under -->
+                                <stop offset="25%" stop-color="#10b981" />   <!-- Normal -->
+                                <stop offset="50%" stop-color="#f59e0b" />   <!-- Overweight -->
+                                <stop offset="75%" stop-color="#f97316" />   <!-- Moderate -->
+                                <stop offset="100%" stop-color="#ef4444" stroke-width="2"/> <!-- Severe -->
+                            </linearGradient>
+                        </defs>
+                        <!-- Arc background -->
+                        <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#e2e8f0" stroke-width="20" stroke-linecap="round"/>
+                        <!-- Arc Colored Gradient -->
+                        <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="url(#gauge-grad)" stroke-width="18" stroke-linecap="round"/>
+                    </svg>
+
+                    <!-- Needle -->
+                    <div id="gauge-needle" class="gauge-needle absolute bottom-0 w-2 h-20 bg-slate-800 rounded-t-full shadow-md transform -rotate-90">
+                        <div class="w-4 h-4 bg-slate-900 rounded-full absolute -bottom-2 -left-1 border-2 border-white"></div>
+                    </div>
+                </div>
+
+                <!-- BMI Standard Legend Bar -->
+                <div class="w-full grid grid-cols-5 text-[10px] sm:text-xs font-bold text-center gap-1 mt-2 pt-4 border-t border-slate-100 text-slate-500">
+                    <div class="text-sky-600">&lt;18.5<br>過輕</div>
+                    <div class="text-emerald-600">18.5-23.9<br>正常</div>
+                    <div class="text-amber-600">24-26.9<br>過重</div>
+                    <div class="text-orange-600">27-29.9<br>輕度肥胖</div>
+                    <div class="text-rose-600">≥30<br>中重肥胖</div>
+                </div>
+            </div>
+
+            <!-- Health Analytics Grid (Ideal Weight & Calorie Intake) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- Ideal Weight Range Card -->
+                <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center text-xl shrink-0">
+                        <i class="fa-solid fa-bullseye"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs font-bold text-slate-400 uppercase">建議理想體重範圍</div>
+                        <div id="res-ideal-weight" class="text-lg font-black text-slate-800 mt-0.5">53.5 ~ 69.1 kg</div>
+                    </div>
+                </div>
+
+                <!-- Recommended Daily TDEE Card -->
+                <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl shrink-0">
+                        <i class="fa-solid fa-fire-flame-curved"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs font-bold text-slate-400 uppercase">每日維持熱量 (TDEE)</div>
+                        <div id="res-tdee" class="text-lg font-black text-slate-800 mt-0.5">2,150 kcal</div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Bottom Full Width Section: History Records Table -->
+        <section class="lg:col-span-12">
+            <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-clock-rotate-left text-teal-600"></i>
+                            <span>檢測歷史紀錄與成績卡片</span>
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">本地自動儲存檢測歷史，方便隨時追蹤體重變化。</p>
+                    </div>
+
+                    <button id="btn-clear-history" class="text-xs font-bold text-rose-500 hover:text-rose-600 bg-rose-50 hover:bg-rose-100 px-3.5 py-2 rounded-xl transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-trash-can"></i>
+                        <span>清除全部紀錄</span>
+                    </button>
+                </div>
+
+                <!-- History Table / Cards -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-200 text-slate-400 text-xs uppercase tracking-wider font-bold">
+                                <th class="py-3 px-4">時間</th>
+                                <th class="py-3 px-4">性別 / 年齡</th>
+                                <th class="py-3 px-4">身高 / 體重</th>
+                                <th class="py-3 px-4">BMI 數值</th>
+                                <th class="py-3 px-4">健康診斷</th>
+                                <th class="py-3 px-4 text-right">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-tbody" class="divide-y divide-slate-100 text-sm font-medium text-slate-700">
+                            <!-- Dynamic Content Inserted Here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Empty State -->
+                <div id="empty-history" class="hidden py-12 text-center text-slate-400">
+                    <i class="fa-solid fa-folder-open text-4xl mb-3 opacity-50"></i>
+                    <p class="text-sm font-bold">尚無檢測紀錄，請在上方輸入資料進行計算。</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full border-t border-slate-200 py-6 bg-white text-center text-xs text-slate-400 font-medium">
+        <p>© 徐少勇BMI計算網站 — 健康生活．不塑永續</p>
+    </footer>
+
+    <!-- JavaScript App Logic -->
+    <script>
+        // LocalStorage Key
+        const STORAGE_KEY = 'hsu_bmi_history_records';
+
+        // DOM Elements
+        const bmiForm = document.getElementById('bmi-form');
+        const heightInput = document.getElementById('height');
+        const weightInput = document.getElementById('weight');
+        const ageInput = document.getElementById('age');
+        const activitySelect = document.getElementById('activity');
+        
+        const resBmi = document.getElementById('res-bmi');
+        const resStatusTag = document.getElementById('res-status-tag');
+        const gaugeNeedle = document.getElementById('gauge-needle');
+        const resIdealWeight = document.getElementById('res-ideal-weight');
+        const resTdee = document.getElementById('res-tdee');
+
+        const headerTotalCount = document.getElementById('header-total-count');
+        const headerLatestBmi = document.getElementById('header-latest-bmi');
+        const headerStatusBadge = document.getElementById('header-status-badge');
+
+        const historyTbody = document.getElementById('history-tbody');
+        const emptyHistory = document.getElementById('empty-history');
+        const btnClearHistory = document.getElementById('btn-clear-history');
+
+        // Initial Records Array
+        let historyData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+
+        // Evaluate BMI Status Category
+        function getBmiCategory(bmi) {
+            if (bmi < 18.5) {
+                return { label: '體重過輕', color: 'bg-sky-100 text-sky-700 border-sky-300', needleAngle: -72 };
+            } else if (bmi >= 18.5 && bmi <= 23.9) {
+                return { label: '正常體重', color: 'bg-emerald-100 text-emerald-700 border-emerald-300', needleAngle: -36 };
+            } else if (bmi >= 24.0 && bmi <= 26.9) {
+                return { label: '體重過重', color: 'bg-amber-100 text-amber-700 border-amber-300', needleAngle: 0 };
+            } else if (bmi >= 27.0 && bmi <= 29.9) {
+                return { label: '輕度肥胖', color: 'bg-orange-100 text-orange-700 border-orange-300', needleAngle: 36 };
+            } else if (bmi >= 30.0 && bmi <= 34.9) {
+                return { label: '中度肥胖', color: 'bg-rose-100 text-rose-700 border-rose-300', needleAngle: 65 };
+            } else {
+                return { label: '重度肥胖', color: 'bg-red-200 text-red-800 border-red-400', needleAngle: 85 };
+            }
+        }
+
+        // Calculate BMI Core Logic
+        function calculateBMI(saveRecord = true) {
+            const heightCm = parseFloat(heightInput.value);
+            const weightKg = parseFloat(weightInput.value);
+            const age = parseInt(ageInput.value) || 25;
+            const gender = document.querySelector('input[name="gender"]:checked').value;
+            const activity = parseFloat(activitySelect.value);
+
+            if (!heightCm || !weightKg || heightCm <= 0 || weightKg <= 0) return;
+
+            const heightM = heightCm / 100;
+            const bmi = parseFloat((weightKg / (heightM * heightM)).toFixed(1));
+
+            // Status category
+            const category = getBmiCategory(bmi);
+
+            // Update Main Result Card UI
+            resBmi.textContent = bmi;
+            resStatusTag.textContent = `${category.label} (${bmi < 18.5 ? '<18.5' : bmi <= 23.9 ? '18.5-23.9' : bmi <= 26.9 ? '24-26.9' : bmi <= 29.9 ? '27-29.9' : '≥30'})`;
+            resStatusTag.className = `px-4 py-1.5 rounded-full font-bold text-sm transition-all duration-300 ${category.color}`;
+
+            // Rotate Needle (-90deg to +90deg)
+            gaugeNeedle.style.transform = `rotate(${category.needleAngle}deg)`;
+
+            // Ideal Weight Range (18.5 * h^2 ~ 23.9 * h^2)
+            const minIdeal = (18.5 * heightM * heightM).toFixed(1);
+            const maxIdeal = (23.9 * heightM * heightM).toFixed(1);
+            resIdealWeight.textContent = `${minIdeal} ~ ${maxIdeal} kg`;
+
+            // BMR (Mifflin-St Jeor Formula) & TDEE
+            let bmr = (10 * weightKg) + (6.25 * heightCm) - (5 * age);
+            bmr = (gender === 'male') ? bmr + 5 : bmr - 161;
+            const tdee = Math.round(bmr * activity);
+            resTdee.textContent = `${tdee.toLocaleString()} kcal`;
+
+            // Save Record if triggered by user submit
+            if (saveRecord) {
+                const now = new Date();
+                const timeStr = `${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+                
+                const record = {
+                    id: Date.now(),
+                    time: timeStr,
+                    gender: gender === 'male' ? '男' : '女',
+                    age,
+                    height: heightCm,
+                    weight: weightKg,
+                    bmi,
+                    label: category.label
+                };
+
+                historyData.unshift(record);
+                saveHistory();
+                renderHistory();
+            }
+        }
+
+        // Save history to localStorage
+        function saveHistory() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(historyData));
+            updateHeaderStats();
+        }
+
+        // Render Header Quick Stats
+        function updateHeaderStats() {
+            headerTotalCount.textContent = historyData.length;
+            if (historyData.length > 0) {
+                const latest = historyData[0];
+                headerLatestBmi.textContent = latest.bmi;
+                const cat = getBmiCategory(latest.bmi);
+                
+                headerStatusBadge.textContent = latest.label;
+                headerStatusBadge.className = `text-[11px] font-bold px-2 py-0.5 rounded-full ${cat.color}`;
+                headerStatusBadge.classList.remove('hidden');
+            } else {
+                headerLatestBmi.textContent = '--';
+                headerStatusBadge.classList.add('hidden');
+            }
+        }
+
+        // Render History Table Rows
+        function renderHistory() {
+            if (historyData.length === 0) {
+                historyTbody.innerHTML = '';
+                emptyHistory.classList.remove('hidden');
+                return;
+            }
+
+            emptyHistory.classList.add('hidden');
+            historyTbody.innerHTML = historyData.map(item => {
+                const cat = getBmiCategory(item.bmi);
+                return `
+                    <tr class="hover:bg-slate-50/80 transition">
+                        <td class="py-3 px-4 text-slate-500 text-xs">${item.time}</td>
+                        <td class="py-3 px-4 font-semibold">${item.gender} / ${item.age}歲</td>
+                        <td class="py-3 px-4">${item.height}cm / ${item.weight}kg</td>
+                        <td class="py-3 px-4 font-black text-slate-800">${item.bmi}</td>
+                        <td class="py-3 px-4">
+                            <span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${cat.color}">
+                                ${item.label}
+                            </span>
+                        </td>
+                        <td class="py-3 px-4 text-right">
+                            <button onclick="deleteRecord(${item.id})" class="text-slate-400 hover:text-rose-500 transition px-2 py-1">
+                                <i class="fa-solid fa-xmark text-base"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Delete Single Record
+        window.deleteRecord = function(id) {
+            historyData = historyData.filter(item => item.id !== id);
+            saveHistory();
+            renderHistory();
+        };
+
+        // Clear All History
+        btnClearHistory.addEventListener('click', () => {
+            if (historyData.length === 0) return;
+            historyData = [];
+            saveHistory();
+            renderHistory();
+        });
+
+        // Form Submit Handler
+        bmiForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            calculateBMI(true);
+        });
+
+        // Initialize App on Page Load
+        window.onload = () => {
+            calculateBMI(false); // Initial calculation preview without saving
+            updateHeaderStats();
+            renderHistory();
+        };
+    </script>
+</body>
+</html>
